@@ -1,0 +1,6 @@
+venv/
+tracks/
+.DS_Store
+__pycache__/
+database.db
+.env
