@@ -5,9 +5,9 @@ from config import YANDEX_TOKEN, TRACKS_DIRECTORY
 client = Client(YANDEX_TOKEN).init()
 
 
-def download_song(album: int | str, track: int | str) -> tuple:
+def download_song(album: int, track: int) -> tuple:
     path = TRACKS_DIRECTORY / f'{track}:{album}.mp3'
-    thumb_path = TRACKS_DIRECTORY / f'{track}:{album}.jpg'
+    thumb_path = TRACKS_DIRECTORY / f'{album}.jpg'
     track = client.tracks([f'{track}:{album}'])[0]
     if not path.exists():
         track.download(path)
@@ -18,12 +18,12 @@ def download_song(album: int | str, track: int | str) -> tuple:
     return path, thumb_path, title, performer
 
 
-def search(text: str) -> list | None:
+def search(text: str) -> list:
     results = []
     tracks = client.search(text=text)['tracks']
     if tracks is None:
         return None
-    for track in tracks['results'][:5]:
+    for track in tracks['results'][:6]:
         results += [
             {
                 'track_id': track['id'],

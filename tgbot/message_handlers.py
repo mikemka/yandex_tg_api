@@ -18,11 +18,12 @@ async def start(message: types.Message) -> None:
             '<b>🎧 Yandex Music Bot</b>\n'
             '\n'
             'Слушайте и скачивайте треки с music.yandex.ru\n'
-            'Введите название трека и скачайте его в .mp3 файл.\n'
+            'Введите название трека и скачайте его в <code>.mp3</code> файл.\n'
             '\n'
             '<b>⬇️ Как скачать трек:</b>\n'
-            '- По названию или исполнителю\n'
-            '- По ссылке на трек'
+            '- Введите исполнителя или название трека\n'
+            '- Отправьте ссылку на трек из <i>Яндекс.Музыка</i>\n'
+            '- Вы можете найти трек по строчке из него\n'
         ),
         reply=False,
     )
@@ -54,7 +55,13 @@ async def song(message: types.Message) -> None:
     if results is None:
         return await message.reply(text='❌ Ничего не нашлось. Попробуйте изменить свой запрос.', reply=False)
     for number, track in enumerate(results):
-        message_text += f'<code>{number + 1}.</code> <b>{track["title"]}</b> – <i>{track["performer"]}</i>\n'
+        if not number:
+            message_text += (
+                '⬇️ Лучшее совпадение\n\n'
+                f'<b>{track["title"]}</b> – <i>{track["performer"]}</i>\n\n'
+            )
+            continue
+        message_text += f'<code>{number}.</code> <b>{track["title"]}</b> – <i>{track["performer"]}</i>\n'
     
     await message.reply(
         text=message_text,
@@ -82,4 +89,3 @@ async def callback_song_chosen(callback: types.CallbackQuery):
         thumb=open(thumb_path, 'rb'),
     )
     await callback.answer()
-

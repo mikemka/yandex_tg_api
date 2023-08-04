@@ -3,8 +3,15 @@ from aiogram.types.inline_keyboard import InlineKeyboardMarkup, InlineKeyboardBu
 
 def generate_keyboard(results: list) -> InlineKeyboardMarkup:
     buttons = []
+    keyboard = InlineKeyboardMarkup(row_width=5)
     for number, result in enumerate(results):
+        if not number:
+            keyboard.add(InlineKeyboardButton(
+                f'{result["title"]} – {result["performer"]}',
+                callback_data=f'>{result["track_id"]}:{result["album_id"]}'),
+            )
+            continue
         buttons += [
-            InlineKeyboardButton(str(number + 1), callback_data=f'>{result["track_id"]}:{result["album_id"]}')
+            InlineKeyboardButton(str(number), callback_data=f'>{result["track_id"]}:{result["album_id"]}')
         ]
-    return InlineKeyboardMarkup(row_width=5).add(*buttons)
+    return keyboard.add(*buttons)
