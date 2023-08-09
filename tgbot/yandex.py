@@ -1,26 +1,27 @@
-from yandex_music import Client
+from yandex_music import ClientAsync
 from config import YANDEX_TOKEN, TRACKS_DIRECTORY
 
 
-client = Client(YANDEX_TOKEN).init()
+async def init_client():
+    global client
+    client = await ClientAsync(YANDEX_TOKEN).init()
 
 
-def download_song(album: int, track: int) -> tuple:
+async def download_song(album: int, track: int) -> tuple:
     path = TRACKS_DIRECTORY / f'{track}:{album}.mp3'
     thumb_path = TRACKS_DIRECTORY / f'{album}.jpg'
-    track = client.tracks([f'{track}:{album}'])[0]
+    track = (await client.tracks([f'{track}:{album}']))[0]
     if not path.exists():
-        track.download(path)
+        await track.download_async(path)
     if not thumb_path.exists():
-        track.download_cover(thumb_path)
+        await track.download_cover_async(thumb_path)
     title = track.title
     performer =  ', '.join(map(lambda i: i['name'], track.artists[:3]))
     return path, thumb_path, title, performer
 
 
-def search(text: str) -> list:
-    results = []
-    tracks = client.search(text=text)['tracks']
+async def search(text: str) -> list:
+    results, tracks = [], (await client.search(text=text))['tracks']
     if tracks is None:
         return None
     for track in tracks['results'][:6]:

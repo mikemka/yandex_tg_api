@@ -34,7 +34,7 @@ async def song(message: types.Message) -> None:
     url = match(r'https{0,1}://music\.yandex\.ru/album/(\d+)/track/(\d+)', message.text)
     if url:
         try:
-            result = download_song(url.group(1), url.group(2))
+            result = await download_song(url.group(1), url.group(2))
         except BadRequestError:
             await message.delete()
             return await message.reply(text='❌ Возможно, песня была перемещена или удалена.', reply=False)
@@ -51,29 +51,21 @@ async def song(message: types.Message) -> None:
         )
     
     message_text = '<b>🔎 Результаты поиска</b>\n\n'
-    results = search_song(message.text)
+    results = await search_song(message.text)
     if results is None:
         return await message.reply(text='❌ Ничего не нашлось. Попробуйте изменить свой запрос.', reply=False)
     for number, track in enumerate(results):
         if not number:
-            message_text += (
-                '⬇️ Лучшее совпадение\n\n'
-                f'<b>{track["title"]}</b> – <i>{track["performer"]}</i>\n\n'
-            )
+            message_text += (f'⬇️ Лучшее совпадение\n\n<b>{track["title"]}</b> – <i>{track["performer"]}</i>\n\n')
             continue
         message_text += f'<code>{number}.</code> <b>{track["title"]}</b> – <i>{track["performer"]}</i>\n'
-    
-    await message.reply(
-        text=message_text,
-        reply_markup=generate_keyboard(results),
-        reply=False,
-    )
+    await message.reply(text=message_text, reply_markup=generate_keyboard(results), reply=False)
 
 
 @dp.callback_query_handler(Text(startswith=">"))
 async def callback_song_chosen(callback: types.CallbackQuery):
     try:
-        result = download_song(*callback.data[1:].split(':')[::-1])
+        result = await download_song(*callback.data[1:].split(':')[::-1])
     except BadRequestError:
         return await callback.bot.send_message(
             chat_id=callback.from_user.id,
