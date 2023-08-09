@@ -1,5 +1,5 @@
 from config import DATABASE
-from peewee import SqliteDatabase, Model, IntegerField, CharField
+from peewee import SqliteDatabase, Model, IntegerField
 
 
 database = SqliteDatabase(DATABASE)
