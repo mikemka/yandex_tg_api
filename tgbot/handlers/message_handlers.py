@@ -28,17 +28,23 @@ async def start(message: types.Message) -> None:
         reply=False,
     )
 
+
 @dp.message_handler(regexp=r'https{0,1}://music\.yandex\.ru/album/(\d+)/track/(\d+)')
 async def song(message: types.Message) -> None:
     url = match(r'https{0,1}://music\.yandex\.ru/album/(\d+)/track/(\d+)', message.text)
     try:
         result = await download_song(url.group(1), url.group(2))
-    except BadRequestError:
+    except Exception:
         await message.delete()
         return await message.reply(
             text='❌ Возможно, песня была перемещена или удалена.',
             reply=False,
         )
+    
+    msg_ans = await message.reply(
+        text='🎧 Скачиваем...',
+        reply=False,
+    )
     
     path, thumb_path, title, performer = result
     
@@ -50,6 +56,7 @@ async def song(message: types.Message) -> None:
         title=title,
         thumb=open(thumb_path, 'rb'),
     )
+    await msg_ans.delete()
     remove(path=path)
     remove(path=thumb_path)
 

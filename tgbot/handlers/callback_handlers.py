@@ -15,6 +15,12 @@ async def callback_song_chosen(callback: types.CallbackQuery):
             chat_id=callback.from_user.id,
             text='❌ Возможно, песня была перемещена или удалена.',
         )
+    
+    msg_ans = await callback.bot.send_message(
+        chat_id=callback.from_user.id,
+        text='🎧 Скачиваем...',
+    )
+
     path, thumb_path, title, performer = result
     await callback.bot.send_audio(
         callback.from_user.id,
@@ -25,5 +31,6 @@ async def callback_song_chosen(callback: types.CallbackQuery):
         thumb=open(thumb_path, 'rb'),
     )
     await callback.answer()
+    await msg_ans.delete()
     remove(path=path)
     remove(path=thumb_path)
