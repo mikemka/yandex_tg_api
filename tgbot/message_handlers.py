@@ -6,6 +6,7 @@ from re import match
 from keyboards import generate_keyboard
 from yandex import download_song, search as search_song
 from yandex_music.exceptions import BadRequestError
+from os import remove
 
 
 @dp.message_handler(commands=['start', 'help'])
@@ -37,11 +38,14 @@ async def song(message: types.Message) -> None:
             result = await download_song(url.group(1), url.group(2))
         except BadRequestError:
             await message.delete()
-            return await message.reply(text='❌ Возможно, песня была перемещена или удалена.', reply=False)
+            return await message.reply(
+                text='❌ Возможно, песня была перемещена или удалена.',
+                reply=False,
+            )
         
         path, thumb_path, title, performer = result
         
-        return await message.bot.send_audio(
+        await message.bot.send_audio(
             message.chat.id,
             audio=open(path, 'rb'),
             caption='Скачано в <a href="https://t.me/yandexMusicDownload_bot">Yandex Music Bot</a>',
@@ -49,14 +53,23 @@ async def song(message: types.Message) -> None:
             title=title,
             thumb=open(thumb_path, 'rb'),
         )
-    
+        remove(path=path)
+        remove(path=thumb_path)
+        return 0
+
     message_text = '<b>🔎 Результаты поиска</b>\n\n'
     results = await search_song(message.text)
     if results is None:
-        return await message.reply(text='❌ Ничего не нашлось. Попробуйте изменить свой запрос.', reply=False)
+        return await message.reply(
+            text='❌ Ничего не нашлось. Попробуйте изменить свой запрос.',
+            reply=False,
+        )
     for number, track in enumerate(results):
         if not number:
-            message_text += (f'⬇️ Лучшее совпадение\n\n<b>{track["title"]}</b> – <i>{track["performer"]}</i>\n\n')
+            message_text += (
+                f'⬇️ Лучшее совпадение\n\n'
+                f'<b>{track["title"]}</b> – <i>{track["performer"]}</i>\n\n'
+            )
             continue
         message_text += f'<code>{number}.</code> <b>{track["title"]}</b> – <i>{track["performer"]}</i>\n'
     await message.reply(text=message_text, reply_markup=generate_keyboard(results), reply=False)
@@ -81,3 +94,5 @@ async def callback_song_chosen(callback: types.CallbackQuery):
         thumb=open(thumb_path, 'rb'),
     )
     await callback.answer()
+    remove(path=path)
+    remove(path=thumb_path)

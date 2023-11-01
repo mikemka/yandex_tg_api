@@ -1,6 +1,7 @@
 import dotenv
 import os
 import pathlib
+from string import digits, ascii_letters
 
 
 BASE_DIR = pathlib.Path(__file__).resolve().parent.parent
@@ -17,6 +18,10 @@ YANDEX_TOKEN = os.getenv('YANDEX_TOKEN')
 DATABASE = BASE_DIR / 'database.db'
 
 TRACKS_DIRECTORY = BASE_DIR / 'tracks'
+
+SYMBOLS = digits + ascii_letters
+
+SYMBOLS_LEN = len(SYMBOLS)
 
 if not TRACKS_DIRECTORY.exists():
     os.mkdir(TRACKS_DIRECTORY)
