@@ -1,5 +1,4 @@
 from aiogram import types
-from aiogram.dispatcher.filters import Text
 from database import User
 from dispather import dp
 from re import match
@@ -29,34 +28,34 @@ async def start(message: types.Message) -> None:
         reply=False,
     )
 
+@dp.message_handler(regexp=r'https{0,1}://music\.yandex\.ru/album/(\d+)/track/(\d+)')
+async def song(message: types.Message) -> None:
+    url = match(r'https{0,1}://music\.yandex\.ru/album/(\d+)/track/(\d+)', message.text)
+    try:
+        result = await download_song(url.group(1), url.group(2))
+    except BadRequestError:
+        await message.delete()
+        return await message.reply(
+            text='❌ Возможно, песня была перемещена или удалена.',
+            reply=False,
+        )
+    
+    path, thumb_path, title, performer = result
+    
+    await message.bot.send_audio(
+        message.chat.id,
+        audio=open(path, 'rb'),
+        caption='Скачано в <a href="https://t.me/yandexMusicDownload_bot">Yandex Music Bot</a>',
+        performer=performer,
+        title=title,
+        thumb=open(thumb_path, 'rb'),
+    )
+    remove(path=path)
+    remove(path=thumb_path)
+
 
 @dp.message_handler()
 async def song(message: types.Message) -> None:
-    url = match(r'https{0,1}://music\.yandex\.ru/album/(\d+)/track/(\d+)', message.text)
-    if url:
-        try:
-            result = await download_song(url.group(1), url.group(2))
-        except BadRequestError:
-            await message.delete()
-            return await message.reply(
-                text='❌ Возможно, песня была перемещена или удалена.',
-                reply=False,
-            )
-        
-        path, thumb_path, title, performer = result
-        
-        await message.bot.send_audio(
-            message.chat.id,
-            audio=open(path, 'rb'),
-            caption='Скачано в <a href="https://t.me/yandexMusicDownload_bot">Yandex Music Bot</a>',
-            performer=performer,
-            title=title,
-            thumb=open(thumb_path, 'rb'),
-        )
-        remove(path=path)
-        remove(path=thumb_path)
-        return 0
-
     message_text = '<b>🔎 Результаты поиска</b>\n\n'
     results = await search_song(message.text)
     if results is None:
@@ -73,26 +72,3 @@ async def song(message: types.Message) -> None:
             continue
         message_text += f'<code>{number}.</code> <b>{track["title"]}</b> – <i>{track["performer"]}</i>\n'
     await message.reply(text=message_text, reply_markup=generate_keyboard(results), reply=False)
-
-
-@dp.callback_query_handler(Text(startswith=">"))
-async def callback_song_chosen(callback: types.CallbackQuery):
-    try:
-        result = await download_song(*callback.data[1:].split(':')[::-1])
-    except BadRequestError:
-        return await callback.bot.send_message(
-            chat_id=callback.from_user.id,
-            text='❌ Возможно, песня была перемещена или удалена.',
-        )
-    path, thumb_path, title, performer = result
-    await callback.bot.send_audio(
-        callback.from_user.id,
-        audio=open(path, 'rb'),
-        caption='Скачано в <a href="https://t.me/yandexMusicDownload_bot">Yandex Music Bot</a>',
-        performer=performer,
-        title=title,
-        thumb=open(thumb_path, 'rb'),
-    )
-    await callback.answer()
-    remove(path=path)
-    remove(path=thumb_path)

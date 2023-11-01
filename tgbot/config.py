@@ -1,21 +1,24 @@
-import dotenv
-import os
-import pathlib
+from ast import literal_eval
+from dotenv import load_dotenv
+from os import getenv, mkdir
+from pathlib import Path
 from string import digits, ascii_letters
 
 
-BASE_DIR = pathlib.Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 DOTENV_PATH = BASE_DIR / '.env'
 
 if DOTENV_PATH.exists():
-    dotenv.load_dotenv(DOTENV_PATH)
+    load_dotenv(DOTENV_PATH)
 
-API_TOKEN = os.getenv('API_TOKEN')
+ADMIN_IDS = literal_eval(getenv('ADMIN_IDS', '[688003991]'))
 
-YANDEX_TOKEN = os.getenv('YANDEX_TOKEN')
+API_TOKEN = getenv('API_TOKEN')
 
 DATABASE = BASE_DIR / 'database.db'
+
+YANDEX_TOKEN = getenv('YANDEX_TOKEN')
 
 TRACKS_DIRECTORY = BASE_DIR / 'tracks'
 
@@ -24,4 +27,4 @@ SYMBOLS = digits + ascii_letters
 SYMBOLS_LEN = len(SYMBOLS)
 
 if not TRACKS_DIRECTORY.exists():
-    os.mkdir(TRACKS_DIRECTORY)
+    mkdir(TRACKS_DIRECTORY)
