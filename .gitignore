@@ -4,3 +4,4 @@ tracks/
 __pycache__/
 database.db
 .env
+ignore*.*

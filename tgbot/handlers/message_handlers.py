@@ -2,9 +2,8 @@ from aiogram import types
 from database import User
 from dispather import dp
 from re import match
-from keyboards import generate_keyboard
-from yandex import download_song, search as search_song
-from yandex_music.exceptions import BadRequestError
+from keyboards import generate_keyboard, generate_artist_keyboard
+from yandex import download_song, search as search_song, get_artist
 from os import remove
 
 
@@ -30,7 +29,7 @@ async def start(message: types.Message) -> None:
 
 
 @dp.message_handler(regexp=r'https{0,1}://music\.yandex\.ru/album/(\d+)/track/(\d+)')
-async def song(message: types.Message) -> None:
+async def song_by_link(message: types.Message) -> None:
     url = match(r'https{0,1}://music\.yandex\.ru/album/(\d+)/track/(\d+)', message.text)
     try:
         result = await download_song(url.group(1), url.group(2))
@@ -61,8 +60,32 @@ async def song(message: types.Message) -> None:
     remove(path=thumb_path)
 
 
+@dp.message_handler(regexp=r'https{0,1}://music\.yandex\.ru/artist/(\d+)')
+async def artist_by_link(message: types.Message) -> None:
+    artist_id = match(r'https{0,1}://music\.yandex\.ru/artist/(\d+)', message.text).group(1)
+    try:
+        (
+            artist_name,
+            tracks_results,
+            tracks_titles_output,
+            left_btn,
+            right_btn,
+        ) = await get_artist(artist_id)
+    except Exception:
+        await message.delete()
+        return await message.reply(
+            text='❌ Исполнитель не найден.',
+            reply=False,
+        )
+    await message.reply(
+        text=f'<b>🎧 {artist_name}</b>\n\n{tracks_titles_output}',
+        reply=False,
+        reply_markup=generate_artist_keyboard(tracks_results, artist_id, left_btn, right_btn),
+    )
+
+
 @dp.message_handler()
-async def song(message: types.Message) -> None:
+async def search(message: types.Message) -> None:
     message_text = '<b>🔎 Результаты поиска</b>\n\n'
     results = await search_song(message.text)
     if results is None:

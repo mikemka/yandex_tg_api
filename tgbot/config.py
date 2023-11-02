@@ -2,7 +2,7 @@ from ast import literal_eval
 from dotenv import load_dotenv
 from os import getenv, mkdir
 from pathlib import Path
-from string import digits, ascii_letters
+from string import digits, ascii_letters, punctuation
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -22,7 +22,7 @@ YANDEX_TOKEN = getenv('YANDEX_TOKEN')
 
 TRACKS_DIRECTORY = BASE_DIR / 'tracks'
 
-SYMBOLS = digits + ascii_letters
+SYMBOLS = digits + ascii_letters + punctuation
 
 SYMBOLS_LEN = len(SYMBOLS)
 
