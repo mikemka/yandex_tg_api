@@ -1,3 +1,3 @@
 #!/bin/bash
-source /home/mikemka/yandex_tg_api/venv/bin/activate
-exec python /home/mikemka/yandex_tg_api/tgbot/bot.py
+source /home/www/yandex-tg/venv/bin/activate
+exec python /home/www/yandex-tg/tgbot/bot.py
