@@ -9,6 +9,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 DOTENV_PATH = BASE_DIR / '.env'
 
+PICKLE_PATH = BASE_DIR / 'storage.pickle'
+
 if DOTENV_PATH.exists():
     load_dotenv(DOTENV_PATH)
 

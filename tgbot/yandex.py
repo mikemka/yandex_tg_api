@@ -61,19 +61,74 @@ async def download_song(album: int, track_id: int) -> tuple:
     return path, thumb_path, track.title, performer
 
 
-async def search(text: str) -> list:
-    results, tracks = [], (await client.search(text=text))['tracks']
-    if tracks is None:
-        return None
-    for track in tracks['results'][:6]:
-        results += [
-            {
+async def search(text: str, state='track') -> list | None:
+    """
+    Returns dict `output`
+    
+    albums, artists, playlists: [(id, title|name), ]
+    track: [{'track_id', 'album_id', 'title', 'performer'}, ]
+    """
+    
+    assert state in ('album', 'artist', 'playlist', 'track')
+    
+    result = await client.search(type_='all', text=text)
+    best_type = result['best']['type']
+    output = {
+        'best_type': best_type if best_type in ('album', 'artist', 'playlist', 'track') else None,
+        'albums': [], 'artists': [], 'playlists': [], 'tracks': [],
+    }
+    
+    match result['best']['type']:
+        case 'album':
+            output['albums'] = [(result['best']['result']['id'], result['best']['result']['title'])]
+        case 'artist':
+            output['artists'] = [(result['best']['result']['id'], result['best']['result']['name'])]
+        case 'playlist':
+            output['playlists'] = [(result['best']['result']['uid'], result['best']['result']['title'])]
+        case 'track':
+            track = result['best']['result']
+            output['tracks'] = [{
                 'track_id': track['id'],
                 'album_id': track['albums'][0]['id'],
                 'title': track['title'],
                 'performer': ', '.join(map(lambda i: i['name'], track['artists'][:3])),
-            }
-        ]
+            }]
+    
+    match state:
+        case 'album':
+            x = 1 if best_type == 'albums' else 0
+            for album in result['albums']['results'][x:x + 5]:
+                output['albums'] += [(album['id'], album['title'])]
+        case 'artist':
+            x = 1 if best_type == 'artist' else 0
+            for artist in result['artists']['results'][x:x + 5]:
+                output['artists'] += [(artist['id'], artist['name'])]
+        case 'playlist':
+            for playlist in result['playlists']['results'][1 if best_type == 'playlist' else 0:]:
+                output['playlists'] += [(playlist['uid'], playlist['title'])]
+        case 'track':
+            x = 1 if best_type == 'track' else 0
+            for track in result['tracks']['results'][x:x + 5]:
+                output['tracks'] += [{
+                    'track_id': track['id'],
+                    'album_id': track['albums'][0]['id'],
+                    'title': track['title'],
+                    'performer': ', '.join(map(lambda i: i['name'], track['artists'][:3])),
+                }]
+    return output
+
+
+async def search_song(text: str) -> list | None:
+    results, tracks = [], (await client.search(text=text))['tracks']
+    if tracks is None:
+        return None
+    for track in tracks['results'][:6]:
+        results += [{
+            'track_id': track['id'],
+            'album_id': track['albums'][0]['id'],
+            'title': track['title'],
+            'performer': ', '.join(map(lambda i: i['name'], track['artists'][:3])),
+        }]
     return results
 
 

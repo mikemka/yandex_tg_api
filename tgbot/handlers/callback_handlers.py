@@ -40,13 +40,7 @@ async def callback_song_chosen(callback: types.CallbackQuery):
 @dp.callback_query_handler(Text(startswith='$'))
 async def callback_song_chosen(callback: types.CallbackQuery):
     page_id, artist_id = map(int, callback.data[1:].split('~'))
-    (
-        artist_name,
-        tracks_results,
-        tracks_titles_output,
-        left_btn,
-        right_btn,
-    ) = await get_artist(artist_id, page_id)
+    artist_name, tracks_results, tracks_titles_output, left_btn, right_btn = await get_artist(artist_id, page_id)
     await callback.message.edit_text(
         text=f'<b>🎧 {artist_name}</b>\n\n{tracks_titles_output}',
         reply_markup=generate_artist_keyboard(tracks_results, artist_id, left_btn, right_btn),

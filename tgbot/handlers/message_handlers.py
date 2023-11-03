@@ -1,4 +1,5 @@
 from aiogram import types
+from aiogram.dispatcher.storage import FSMContext
 from database import User
 from dispather import dp
 from re import match
@@ -64,13 +65,7 @@ async def song_by_link(message: types.Message) -> None:
 async def artist_by_link(message: types.Message) -> None:
     artist_id = match(r'https{0,1}://music\.yandex\.ru/artist/(\d+)', message.text).group(1)
     try:
-        (
-            artist_name,
-            tracks_results,
-            tracks_titles_output,
-            left_btn,
-            right_btn,
-        ) = await get_artist(artist_id)
+        artist_name, tracks_results, tracks_titles_output, left_btn, right_btn = await get_artist(artist_id)
     except Exception:
         await message.delete()
         return await message.reply(
@@ -84,21 +79,38 @@ async def artist_by_link(message: types.Message) -> None:
     )
 
 
-@dp.message_handler()
-async def search(message: types.Message) -> None:
-    message_text = '<b>🔎 Результаты поиска</b>\n\n'
-    results = await search_song(message.text)
-    if results is None:
+@dp.message_handler(state="*")
+async def search(message: types.Message, state: FSMContext) -> None:
+    message_text = '<b>🔎 Результаты поиска</b>\n\n⬇️ Лучшее совпадение\n\n'
+    searching_state = 'playlist'  # TODO
+    results = await search_song(message.text, state=searching_state)
+    
+    if results['best_type'] is None:
         return await message.reply(
-            text='❌ Ничего не нашлось. Попробуйте изменить свой запрос.',
+            text='❌ Ничего не нашлось. Попробуйте сменить тип поиска или изменить свой запрос.',
             reply=False,
         )
-    for number, track in enumerate(results):
-        if not number:
-            message_text += (
-                f'⬇️ Лучшее совпадение\n\n'
-                f'<b>{track["title"]}</b> – <i>{track["performer"]}</i>\n\n'
-            )
-            continue
-        message_text += f'<code>{number}.</code> <b>{track["title"]}</b> – <i>{track["performer"]}</i>\n'
-    await message.reply(text=message_text, reply_markup=generate_keyboard(results), reply=False)
+    
+    x = {'album': 'альбом', 'artist': 'исполнитель', 'playlist': 'плейлист'}
+    if results['best_type'] == 'track':
+        track = results["tracks"][0]
+        message_text += f'<b>{track["title"]}</b> – <i>{track["performer"]}</i>\n\n'
+    else:
+        message_text += (
+            f'<b>{results[results["best_type"] + "s"][0][1]}</b> – <i>[{x[results["best_type"]]}]</i>\n\n'
+        )
+    
+    for index, val in enumerate(
+        results[f'{searching_state}s'][1 if results['best_type'] == searching_state else 0:],
+        start=1,
+    ):
+        if searching_state == 'track':
+            message_text += f'<code>{index}.</code> <b>{val["title"]}</b> – <i>{val["performer"]}</i>\n'
+        else:
+            message_text += f'<code>{index}.</code> <b>{val[1]}</b> – <i>[{x[searching_state]}]</i>\n'
+
+
+    await message.reply(
+        text=message_text,
+        reply=False,
+    )
