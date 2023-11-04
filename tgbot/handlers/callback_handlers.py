@@ -5,12 +5,18 @@ from keyboards import generate_artist_keyboard
 from yandex import download_song, get_artist
 from yandex_music.exceptions import BadRequestError
 from os import remove
+from user_info import next_search_type
 
 
-@dp.callback_query_handler(Text(startswith=">"))
+@dp.callback_query_handler(Text(equals='next_search_type'))
+async def callback_song_chosen(callback: types.CallbackQuery):
+    next_search_type(callback.from_user.id)
+
+
+@dp.callback_query_handler(Text(startswith="!track!"))
 async def callback_song_chosen(callback: types.CallbackQuery):
     try:
-        result = await download_song(*callback.data[1:].split(':')[::-1])
+        result = await download_song(*callback.data[7:].split(':')[::-1])
     except BadRequestError:
         return await callback.bot.send_message(
             chat_id=callback.from_user.id,

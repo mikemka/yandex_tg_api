@@ -61,7 +61,7 @@ async def download_song(album: int, track_id: int) -> tuple:
     return path, thumb_path, track.title, performer
 
 
-async def search(text: str, state='track') -> list | None:
+async def search(text: str, search_type='track') -> dict | None:
     """
     Returns dict `output`
     
@@ -69,9 +69,12 @@ async def search(text: str, state='track') -> list | None:
     track: [{'track_id', 'album_id', 'title', 'performer'}, ]
     """
     
-    assert state in ('album', 'artist', 'playlist', 'track')
+    assert search_type in ('album', 'artist', 'playlist', 'track')
     
     result = await client.search(type_='all', text=text)
+    if result['best'] is None:
+        return None
+    
     best_type = result['best']['type']
     output = {
         'best_type': best_type if best_type in ('album', 'artist', 'playlist', 'track') else None,
@@ -94,7 +97,7 @@ async def search(text: str, state='track') -> list | None:
                 'performer': ', '.join(map(lambda i: i['name'], track['artists'][:3])),
             }]
     
-    match state:
+    match search_type:
         case 'album':
             x = 1 if best_type == 'albums' else 0
             for album in result['albums']['results'][x:x + 5]:
@@ -116,20 +119,6 @@ async def search(text: str, state='track') -> list | None:
                     'performer': ', '.join(map(lambda i: i['name'], track['artists'][:3])),
                 }]
     return output
-
-
-async def search_song(text: str) -> list | None:
-    results, tracks = [], (await client.search(text=text))['tracks']
-    if tracks is None:
-        return None
-    for track in tracks['results'][:6]:
-        results += [{
-            'track_id': track['id'],
-            'album_id': track['albums'][0]['id'],
-            'title': track['title'],
-            'performer': ', '.join(map(lambda i: i['name'], track['artists'][:3])),
-        }]
-    return results
 
 
 # Utils

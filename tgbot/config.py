@@ -20,6 +20,8 @@ API_TOKEN = getenv('API_TOKEN')
 
 DATABASE = BASE_DIR / 'database.db'
 
+STORAGE_PATH = BASE_DIR / 'storage.json'
+
 YANDEX_TOKEN = getenv('YANDEX_TOKEN')
 
 TRACKS_DIRECTORY = BASE_DIR / 'tracks'
@@ -27,6 +29,10 @@ TRACKS_DIRECTORY = BASE_DIR / 'tracks'
 SYMBOLS = digits + ascii_letters + punctuation
 
 SYMBOLS_LEN = len(SYMBOLS)
+
+ENG_TO_RUS_TYPE = {'album': 'альбом', 'artist': 'исполнитель', 'playlist': 'плейлист', 'track': 'трек'}
+
+SEARCH_TYPES = ('track', 'artist', 'album', 'playlist')
 
 if not TRACKS_DIRECTORY.exists():
     mkdir(TRACKS_DIRECTORY)

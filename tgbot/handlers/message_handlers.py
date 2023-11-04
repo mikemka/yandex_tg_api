@@ -1,10 +1,9 @@
 from aiogram import types
-from aiogram.dispatcher.storage import FSMContext
 from database import User
 from dispather import dp
+from keyboards import generate_artist_keyboard
 from re import match
-from keyboards import generate_keyboard, generate_artist_keyboard
-from yandex import download_song, search as search_song, get_artist
+from yandex import download_song, get_artist
 from os import remove
 
 
@@ -76,41 +75,4 @@ async def artist_by_link(message: types.Message) -> None:
         text=f'<b>🎧 {artist_name}</b>\n\n{tracks_titles_output}',
         reply=False,
         reply_markup=generate_artist_keyboard(tracks_results, artist_id, left_btn, right_btn),
-    )
-
-
-@dp.message_handler(state="*")
-async def search(message: types.Message, state: FSMContext) -> None:
-    message_text = '<b>🔎 Результаты поиска</b>\n\n⬇️ Лучшее совпадение\n\n'
-    searching_state = 'playlist'  # TODO
-    results = await search_song(message.text, state=searching_state)
-    
-    if results['best_type'] is None:
-        return await message.reply(
-            text='❌ Ничего не нашлось. Попробуйте сменить тип поиска или изменить свой запрос.',
-            reply=False,
-        )
-    
-    x = {'album': 'альбом', 'artist': 'исполнитель', 'playlist': 'плейлист'}
-    if results['best_type'] == 'track':
-        track = results["tracks"][0]
-        message_text += f'<b>{track["title"]}</b> – <i>{track["performer"]}</i>\n\n'
-    else:
-        message_text += (
-            f'<b>{results[results["best_type"] + "s"][0][1]}</b> – <i>[{x[results["best_type"]]}]</i>\n\n'
-        )
-    
-    for index, val in enumerate(
-        results[f'{searching_state}s'][1 if results['best_type'] == searching_state else 0:],
-        start=1,
-    ):
-        if searching_state == 'track':
-            message_text += f'<code>{index}.</code> <b>{val["title"]}</b> – <i>{val["performer"]}</i>\n'
-        else:
-            message_text += f'<code>{index}.</code> <b>{val[1]}</b> – <i>[{x[searching_state]}]</i>\n'
-
-
-    await message.reply(
-        text=message_text,
-        reply=False,
     )

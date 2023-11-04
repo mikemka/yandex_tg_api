@@ -2,11 +2,9 @@ import logging
 from aiogram import executor
 from asyncio import ensure_future
 from dispather import dp
-from handlers.admin_handlers import *
-from handlers.callback_handlers import *
-from handlers.message_handlers import *
 from config import DATABASE
 from database import create_tables
+import handlers
 from yandex import init_client
 
 
