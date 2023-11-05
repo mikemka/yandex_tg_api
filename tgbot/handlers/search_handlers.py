@@ -8,15 +8,15 @@ from yandex import search as search_song
 from user_info import get_search_type, next_search_type, save_search_request, get_search_request
 
 
-@dp.callback_query_handler(Text(startswith='next_search_type'))
-async def callback_song_chosen(callback: types.CallbackQuery):
+async def callback_main_search(callback: types.CallbackQuery, need_next_search_type=True):
     search_request_id = callback.data[callback.data.find(':') + 1:]
     search_request = get_search_request(search_request_id)
     
     if search_request is None:
         return await callback.answer('Запрос устарел! Введите снова.')
 
-    next_search_type(callback.from_user.id)
+    if need_next_search_type:
+        next_search_type(callback.from_user.id)
     
     match get_search_type(callback.from_user.id):
         case 0:
@@ -33,8 +33,18 @@ async def callback_song_chosen(callback: types.CallbackQuery):
             )
 
 
+@dp.callback_query_handler(Text(startswith='search'))
+async def callback_back_to_search(callback: types.CallbackQuery):
+    await callback_main_search(callback=callback, need_next_search_type=False)
+
+
+@dp.callback_query_handler(Text(startswith='next_search_type'))
+async def callback_next_search_type(callback: types.CallbackQuery):
+    await callback_main_search(callback=callback)
+
+
 @dp.message_handler(SearchTypeFilter(requested_search_type='track'))
-async def search_type_track(message: types.Message) -> None:
+async def message_search_type_track(message: types.Message) -> None:
     message_text = (
         '<b>🔎 Результаты поиска</b>\n\n'
         '⬇️ Лучшее совпадение\n\n'
@@ -80,7 +90,7 @@ async def search_type_track(message: types.Message) -> None:
 
 
 @dp.message_handler()
-async def search_type_other(message: types.Message) -> None:
+async def message_search_type_other(message: types.Message) -> None:
     message_text = (
         '<b>🔎 Результаты поиска</b>\n\n'
         '⬇️ Лучшее совпадение\n\n'

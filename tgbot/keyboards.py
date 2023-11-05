@@ -15,7 +15,7 @@ def generate_search_keyboard(results: dict, user_id: int, search_id: str) -> Inl
         case _:
             best_result_btn = InlineKeyboardButton(
                 text=f'{results["best_result"][1]} – [{ENG_TO_RUS_TYPE[results["best_type"]]}]',
-                callback_data=f'!{results["best_type"]}!{results["best_result"][0]}',
+                callback_data=f'!{results["best_type"]}!{results["best_result"][0]}!{search_id}',
             )
     results_btns = []
     for index, val in enumerate(results['main_result'], start=1):
@@ -23,7 +23,7 @@ def generate_search_keyboard(results: dict, user_id: int, search_id: str) -> Inl
             case 'track':
                 callback = f'!track!{val["track_id"]}:{val["album_id"]}'
             case _:
-                callback = f'!{results["best_type"]}!{val[0]}'
+                callback = f'!{results["main_type"]}!{val[0]}!{search_id}'
         results_btns += [InlineKeyboardButton(text=str(index), callback_data=callback)]
     
     return InlineKeyboardMarkup(row_width=5).add(
@@ -38,14 +38,22 @@ def generate_search_keyboard(results: dict, user_id: int, search_id: str) -> Inl
     )
 
 
-def generate_artist_keyboard(results: list, artist_id, left=True, right=True) -> InlineKeyboardMarkup:
+def generate_artist_keyboard(
+    results: list,
+    artist_id,
+    left=True,
+    right=True,
+    search_id='',
+) -> InlineKeyboardMarkup:
     buttons = []
-    keyboard = InlineKeyboardMarkup(row_width=5)
     for number, result in results:
-        buttons += [InlineKeyboardButton(text=str(number), callback_data=f'>{result}')]
-    keyboard.add(*buttons)
+        buttons += [InlineKeyboardButton(text=str(number), callback_data=f'!track!{result}')]
     x = results[0][0] // 10
-    return keyboard.row(
-        InlineKeyboardButton(text='«' if left else '', callback_data=f'${x - 1}~{artist_id}'),
-        InlineKeyboardButton(text='»' if right else '', callback_data=f'${x + 1}~{artist_id}'),
+    return InlineKeyboardMarkup(row_width=5).add(
+        *buttons
+    ).add(
+        InlineKeyboardButton(text='«' if left else '', callback_data=f'${x - 1}~{artist_id}!{search_id}'),
+        InlineKeyboardButton(text='»' if right else '', callback_data=f'${x + 1}~{artist_id}!{search_id}'),
+    ).add(
+        InlineKeyboardButton(text='Результаты поиска' if search_id else '', callback_data=f'search:{search_id}')
     )

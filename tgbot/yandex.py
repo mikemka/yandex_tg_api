@@ -29,6 +29,7 @@ async def get_artist(artist_id: int, tracks_page=0, page_size=10) -> tuple:
         tracks_titles_output,
         tracks_page > 0,
         (tracks_page + 1) * page_size < pager.total,
+        pager,
     )
 
 

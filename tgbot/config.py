@@ -26,7 +26,7 @@ YANDEX_TOKEN = getenv('YANDEX_TOKEN')
 
 TRACKS_DIRECTORY = BASE_DIR / 'tracks'
 
-SYMBOLS = digits + ascii_letters + punctuation
+SYMBOLS = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
 SYMBOLS_LEN = len(SYMBOLS)
 

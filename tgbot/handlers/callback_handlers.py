@@ -8,7 +8,7 @@ from os import remove
 
 
 @dp.callback_query_handler(Text(startswith="!track!"))
-async def callback_song_chosen(callback: types.CallbackQuery):
+async def callback_track_chosen(callback: types.CallbackQuery):
     try:
         result = await download_song(*callback.data[7:].split(':')[::-1])
     except BadRequestError:
@@ -37,11 +37,50 @@ async def callback_song_chosen(callback: types.CallbackQuery):
     remove(path=thumb_path)
 
 
-@dp.callback_query_handler(Text(startswith='$'))
-async def callback_song_chosen(callback: types.CallbackQuery):
-    page_id, artist_id = map(int, callback.data[1:].split('~'))
-    artist_name, tracks_results, tracks_titles_output, left_btn, right_btn = await get_artist(artist_id, page_id)
+@dp.callback_query_handler(Text(startswith="!artist!"))
+async def callback_artist_chosen(callback: types.CallbackQuery):
+    artist_id = callback.data[8:][:callback.data[8:].find('!')]
+    search_id = callback.data[8:][callback.data[8:].find('!') + 1:]
+    try:
+        (
+            artist_name,
+            tracks_results,
+            tracks_titles_output,
+            left_btn,
+            right_btn,
+            pager,
+        ) = await get_artist(artist_id)
+    except Exception:
+        return await callback.answer(text='❌ Исполнитель не найден.')
     await callback.message.edit_text(
-        text=f'<b>🎧 {artist_name}</b>\n\n{tracks_titles_output}',
-        reply_markup=generate_artist_keyboard(tracks_results, artist_id, left_btn, right_btn),
+        text=(
+            f'<b>🎧 {artist_name}</b> '
+            f'({min(((pager["page"] + 1) * pager["per_page"], pager["total"]))} из {pager["total"]})\n\n'
+            f'{tracks_titles_output}'
+        ),
+        reply_markup=generate_artist_keyboard(tracks_results, artist_id, left_btn, right_btn, search_id),
+    )
+
+
+@dp.callback_query_handler(Text(startswith='$'))
+async def callback_change_artist_page(callback: types.CallbackQuery):
+    _page_artist_ids = callback.data[1:][:callback.data[1:].find('!')]
+    search_id = callback.data[1:][callback.data[1:].find('!') + 1:]
+    page_id, artist_id = map(int, _page_artist_ids.split('~'))
+    (
+        artist_name,
+        tracks_results,
+        tracks_titles_output,
+        left_btn,
+        right_btn,
+        pager,
+    ) = await get_artist(artist_id, page_id)
+
+    await callback.message.edit_text(
+        text=(
+            f'<b>🎧 {artist_name}</b> '
+            f'({min(((pager["page"] + 1) * pager["per_page"], pager["total"]))} из {pager["total"]})\n\n'
+            f'{tracks_titles_output}'
+        ),
+        reply_markup=generate_artist_keyboard(tracks_results, artist_id, left_btn, right_btn, search_id),
     )

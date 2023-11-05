@@ -20,8 +20,8 @@ async def start(message: types.Message) -> None:
             'Введите название трека и скачайте его в <code>.mp3</code> файл.\n'
             '\n'
             '<b>⬇️ Как скачать трек:</b>\n'
-            '- Введите исполнителя или название трека\n'
-            '- Отправьте ссылку на трек из <i>Яндекс.Музыка</i>\n'
+            '- Введите название трека, исполнителя, альбом или плейлист\n'
+            '- Отправьте ссылку на что угодно из <i>Яндекс.Музыка</i>\n'
             '- Вы можете найти трек по строчке из него\n'
         ),
         reply=False,
@@ -64,7 +64,15 @@ async def song_by_link(message: types.Message) -> None:
 async def artist_by_link(message: types.Message) -> None:
     artist_id = match(r'https{0,1}://music\.yandex\.ru/artist/(\d+)', message.text).group(1)
     try:
-        artist_name, tracks_results, tracks_titles_output, left_btn, right_btn = await get_artist(artist_id)
+        (
+            artist_name,
+            tracks_results,
+            tracks_titles_output,
+            left_btn,
+            right_btn,
+            pager,
+        ) = await get_artist(artist_id)
+
     except Exception:
         await message.delete()
         return await message.reply(
@@ -72,7 +80,11 @@ async def artist_by_link(message: types.Message) -> None:
             reply=False,
         )
     await message.reply(
-        text=f'<b>🎧 {artist_name}</b>\n\n{tracks_titles_output}',
+        text=(
+            f'<b>🎧 {artist_name}</b> '
+            f'({min(((pager["page"] + 1) * pager["per_page"], pager["total"]))} из {pager["total"]})\n\n'
+            f'{tracks_titles_output}'
+        ),
         reply=False,
         reply_markup=generate_artist_keyboard(tracks_results, artist_id, left_btn, right_btn),
     )
