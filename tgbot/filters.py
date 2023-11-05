@@ -17,7 +17,6 @@ class SearchTypeFilter(Filter):
     def __init__(self, requested_search_type: int | str):
         self.requested_search_type = requested_search_type
 
-
     async def check(self, message: types.Message):
         if type(self.requested_search_type) == str: 
             self.requested_search_type = SEARCH_TYPES.index(self.requested_search_type)

@@ -1,8 +1,8 @@
-from config import YANDEX_TOKEN, TRACKS_DIRECTORY, SYMBOLS, SYMBOLS_LEN
+from config import YANDEX_TOKEN, TRACKS_DIRECTORY
 import mutagen
-from pathlib import Path
 from mutagen.easyid3 import EasyID3
 from yandex_music import ClientAsync
+from utils import generate_track_path
 
 
 # Initialising
@@ -36,7 +36,7 @@ async def download_song(album: int, track_id: int) -> tuple:
     track = (await client.tracks([f'{track_id}:{album}']))[0]
     
     performer = ', '.join(map(lambda i: i['name'], track.artists[:3]))
-    path = await generate_track_path(
+    path = generate_track_path(
         title=track.title,
         performer=performer,
         track=int(track_id),
@@ -119,12 +119,3 @@ async def search(text: str, search_type='track') -> dict | None:
                     'performer': ', '.join(map(lambda i: i['name'], track['artists'][:3])),
                 }]
     return output
-
-
-# Utils
-async def generate_track_path(title: str, performer: str, track: int) -> Path:
-    shorted_track_id = ''
-    while track > 0:
-        shorted_track_id = SYMBOLS[track % SYMBOLS_LEN] + shorted_track_id
-        track //= SYMBOLS_LEN
-    return TRACKS_DIRECTORY / f'{title} - {performer} :{shorted_track_id}:.mp3'

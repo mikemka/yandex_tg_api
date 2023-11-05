@@ -16,4 +16,6 @@ if not DATABASE.exists():
     create_tables()
 
 if __name__ == '__main__':
+    handlers
+    
     executor.start_polling(dp, skip_updates=True)

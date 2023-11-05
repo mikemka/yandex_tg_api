@@ -1,5 +1,11 @@
 from simplejson import dump, load
 from config import STORAGE_PATH
+from time import time as current_time
+from utils import short_id
+
+
+# FIXME: file storage
+search_requests = {}
 
 
 def get_search_type(user_id: int | str) -> int:
@@ -40,3 +46,13 @@ def next_search_type(user_id: int | str) -> int:
     with open(STORAGE_PATH, 'w') as json_storage:
         dump(search_type, json_storage)
     return search_type[user_id]
+
+
+def save_search_request(text: str) -> str:
+    search_id = short_id(int(current_time() * 2_100_000))
+    search_requests[search_id] = text
+    return search_id
+
+
+def get_search_request(_id: str) -> str | None:
+    return search_requests.get(_id, None)
