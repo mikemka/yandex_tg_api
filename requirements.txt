@@ -4,3 +4,4 @@ peewee==3.16.2
 python-dotenv==1.0.0
 requests==2.31.0
 yandex-music==2.1.1
+simplejson==3.19.2

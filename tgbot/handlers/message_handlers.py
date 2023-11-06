@@ -1,9 +1,10 @@
 from aiogram import types
+from aiogram.utils.markdown import quote_html
 from database import User
 from dispather import dp
+from keyboards import generate_artist_keyboard, generate_album_keyboard, generate_playlist_keyboard
 from re import match
-from keyboards import generate_keyboard, generate_artist_keyboard
-from yandex import download_song, search as search_song, get_artist
+from yandex import download_song, get_artist, get_album, get_playlist
 from os import remove
 
 
@@ -20,17 +21,17 @@ async def start(message: types.Message) -> None:
             'Введите название трека и скачайте его в <code>.mp3</code> файл.\n'
             '\n'
             '<b>⬇️ Как скачать трек:</b>\n'
-            '- Введите исполнителя или название трека\n'
-            '- Отправьте ссылку на трек из <i>Яндекс.Музыка</i>\n'
+            '- Введите название трека, исполнителя, альбом или плейлист\n'
+            '- Отправьте ссылку на что угодно из <i>Яндекс.Музыка</i>\n'
             '- Вы можете найти трек по строчке из него\n'
         ),
         reply=False,
     )
 
 
-@dp.message_handler(regexp=r'https{0,1}://music\.yandex\.ru/album/(\d+)/track/(\d+)')
+@dp.message_handler(regexp=r'https?://music\.yandex\.ru/album/(\d+)/track/(\d+)')
 async def song_by_link(message: types.Message) -> None:
-    url = match(r'https{0,1}://music\.yandex\.ru/album/(\d+)/track/(\d+)', message.text)
+    url = match(r'https?://music\.yandex\.ru/album/(\d+)/track/(\d+)', message.text)
     try:
         result = await download_song(url.group(1), url.group(2))
     except Exception:
@@ -60,9 +61,9 @@ async def song_by_link(message: types.Message) -> None:
     remove(path=thumb_path)
 
 
-@dp.message_handler(regexp=r'https{0,1}://music\.yandex\.ru/artist/(\d+)')
+@dp.message_handler(regexp=r'https?://music\.yandex\.ru/artist/(\d+)')
 async def artist_by_link(message: types.Message) -> None:
-    artist_id = match(r'https{0,1}://music\.yandex\.ru/artist/(\d+)', message.text).group(1)
+    artist_id = match(r'https?://music\.yandex\.ru/artist/(\d+)', message.text).group(1)
     try:
         (
             artist_name,
@@ -70,7 +71,9 @@ async def artist_by_link(message: types.Message) -> None:
             tracks_titles_output,
             left_btn,
             right_btn,
+            pager,
         ) = await get_artist(artist_id)
+
     except Exception:
         await message.delete()
         return await message.reply(
@@ -78,27 +81,72 @@ async def artist_by_link(message: types.Message) -> None:
             reply=False,
         )
     await message.reply(
-        text=f'<b>🎧 {artist_name}</b>\n\n{tracks_titles_output}',
+        text=(
+            f'<b>🎧 {quote_html(artist_name)}</b> '
+            f'({min(((pager["page"] + 1) * pager["per_page"], pager["total"]))} из {pager["total"]})\n\n'
+            f'{tracks_titles_output}'
+        ),
         reply=False,
         reply_markup=generate_artist_keyboard(tracks_results, artist_id, left_btn, right_btn),
     )
 
 
-@dp.message_handler()
-async def search(message: types.Message) -> None:
-    message_text = '<b>🔎 Результаты поиска</b>\n\n'
-    results = await search_song(message.text)
-    if results is None:
+@dp.message_handler(regexp=r'https?://music\.yandex\.ru/album/(\d+)')
+async def album_by_link(message: types.Message) -> None:
+    album_id = match(r'https?://music\.yandex\.ru/album/(\d+)', message.text).group(1)
+    try:
+        (
+            album_title,
+            tracks_results,
+            tracks_titles_output,
+            left_btn,
+            right_btn,
+            pager,
+        ) = await get_album(album_id)
+
+    except Exception:
+        await message.delete()
         return await message.reply(
-            text='❌ Ничего не нашлось. Попробуйте изменить свой запрос.',
+            text='❌ Альбом не найден.',
             reply=False,
         )
-    for number, track in enumerate(results):
-        if not number:
-            message_text += (
-                f'⬇️ Лучшее совпадение\n\n'
-                f'<b>{track["title"]}</b> – <i>{track["performer"]}</i>\n\n'
-            )
-            continue
-        message_text += f'<code>{number}.</code> <b>{track["title"]}</b> – <i>{track["performer"]}</i>\n'
-    await message.reply(text=message_text, reply_markup=generate_keyboard(results), reply=False)
+    await message.reply(
+        text=(
+            f'<b>🎧 {quote_html(album_title)}</b> '
+            f'({min(((pager["page"] + 1) * pager["per_page"], pager["total"]))} из {pager["total"]})\n\n'
+            f'{tracks_titles_output}'
+        ),
+        reply=False,
+        reply_markup=generate_album_keyboard(tracks_results, album_id, left_btn, right_btn),
+    )
+
+
+@dp.message_handler(regexp=r'https?://music\.yandex\.ru/users/(.+)/playlists/(\d+)')
+async def playlist_by_link(message: types.Message) -> None:
+    url = match(r'https?://music\.yandex\.ru/users/(.+)/playlists/(\d+)', message.text)
+    playlist_id = f'{url.group(1)}:{url.group(2)}'
+    try:
+        (
+            playlist_title,
+            tracks_results,
+            tracks_titles_output,
+            left_btn,
+            right_btn,
+            pager,
+        ) = await get_playlist(playlist_id)
+
+    except Exception:
+        await message.delete()
+        return await message.reply(
+            text='❌ Плейлист не найден.',
+            reply=False,
+        )
+    await message.reply(
+        text=(
+            f'<b>🎧 {quote_html(playlist_title)}</b> '
+            f'({min(((pager["page"] + 1) * pager["per_page"], pager["total"]))} из {pager["total"]})\n\n'
+            f'{tracks_titles_output}'
+        ),
+        reply=False,
+        reply_markup=generate_playlist_keyboard(tracks_results, playlist_id, left_btn, right_btn),
+    )
