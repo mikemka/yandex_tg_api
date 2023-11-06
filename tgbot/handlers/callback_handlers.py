@@ -1,8 +1,9 @@
 from aiogram import types
+from aiogram.utils.markdown import quote_html
 from aiogram.dispatcher.filters import Text
 from dispather import dp
-from keyboards import generate_artist_keyboard
-from yandex import download_song, get_artist
+from keyboards import generate_artist_keyboard, generate_album_keyboard, generate_playlist_keyboard
+from yandex import download_song, get_artist, get_album, get_playlist
 from yandex_music.exceptions import BadRequestError
 from os import remove
 
@@ -54,11 +55,61 @@ async def callback_artist_chosen(callback: types.CallbackQuery):
         return await callback.answer(text='❌ Исполнитель не найден.')
     await callback.message.edit_text(
         text=(
-            f'<b>🎧 {artist_name}</b> '
+            f'<b>🎧 {quote_html(artist_name)}</b> '
             f'({min(((pager["page"] + 1) * pager["per_page"], pager["total"]))} из {pager["total"]})\n\n'
             f'{tracks_titles_output}'
         ),
         reply_markup=generate_artist_keyboard(tracks_results, artist_id, left_btn, right_btn, search_id),
+    )
+
+
+@dp.callback_query_handler(Text(startswith="!album!"))
+async def callback_album_chosen(callback: types.CallbackQuery):
+    album_id = callback.data[7:][:callback.data[7:].find('!')]
+    search_id = callback.data[7:][callback.data[7:].find('!') + 1:]
+    try:
+        (
+            album_title,
+            tracks_results,
+            tracks_titles_output,
+            left_btn,
+            right_btn,
+            pager,
+        ) = await get_album(album_id)
+    except Exception:
+        return await callback.answer(text='❌ Альбом не найден.')
+    await callback.message.edit_text(
+        text=(
+            f'<b>🎧 {quote_html(album_title)}</b> '
+            f'({min(((pager["page"] + 1) * pager["per_page"], pager["total"]))} из {pager["total"]})\n\n'
+            f'{tracks_titles_output}'
+        ),
+        reply_markup=generate_album_keyboard(tracks_results, album_id, left_btn, right_btn, search_id),
+    )
+
+
+@dp.callback_query_handler(Text(startswith="!playlist!"))
+async def callback_playlist_chosen(callback: types.CallbackQuery):
+    playlist_id = callback.data[10:][:callback.data[10:].find('!')]
+    search_id = callback.data[10:][callback.data[10:].find('!') + 1:]
+    try:
+        (
+            playlist_title,
+            tracks_results,
+            tracks_titles_output,
+            left_btn,
+            right_btn,
+            pager,
+        ) = await get_playlist(playlist_id)
+    except Exception:
+        return await callback.answer(text='❌ Плейлист не найден.')
+    await callback.message.edit_text(
+        text=(
+            f'<b>🎧 {quote_html(playlist_title)}</b> '
+            f'({min(((pager["page"] + 1) * pager["per_page"], pager["total"]))} из {pager["total"]})\n\n'
+            f'{tracks_titles_output}'
+        ),
+        reply_markup=generate_playlist_keyboard(tracks_results, playlist_id, left_btn, right_btn, search_id),
     )
 
 
@@ -78,9 +129,55 @@ async def callback_change_artist_page(callback: types.CallbackQuery):
 
     await callback.message.edit_text(
         text=(
-            f'<b>🎧 {artist_name}</b> '
+            f'<b>🎧 {quote_html(artist_name)}</b> '
             f'({min(((pager["page"] + 1) * pager["per_page"], pager["total"]))} из {pager["total"]})\n\n'
             f'{tracks_titles_output}'
         ),
         reply_markup=generate_artist_keyboard(tracks_results, artist_id, left_btn, right_btn, search_id),
+    )
+
+
+@dp.callback_query_handler(Text(startswith='%'))
+async def callback_change_album_page(callback: types.CallbackQuery):
+    search_id = callback.data[1:][callback.data[1:].find('!') + 1:]
+    page_id, album_id = map(int, callback.data[1:][:callback.data[1:].find('!')].split('~'))
+    (
+        album_title,
+        tracks_results,
+        tracks_titles_output,
+        left_btn,
+        right_btn,
+        pager,
+    ) = await get_album(album_id, page_id)
+
+    await callback.message.edit_text(
+        text=(
+            f'<b>🎧 {quote_html(album_title)}</b> '
+            f'({min(((pager["page"] + 1) * pager["per_page"], pager["total"]))} из {pager["total"]})\n\n'
+            f'{tracks_titles_output}'
+        ),
+        reply_markup=generate_album_keyboard(tracks_results, album_id, left_btn, right_btn, search_id),
+    )
+
+
+@dp.callback_query_handler(Text(startswith='@'))
+async def callback_change_playlist_page(callback: types.CallbackQuery):
+    search_id = callback.data[1:][callback.data[1:].find('!') + 1:]
+    page_id, playlist_id = callback.data[1:][:callback.data[1:].find('!')].split('~')
+    (
+        playlist_title,
+        tracks_results,
+        tracks_titles_output,
+        left_btn,
+        right_btn,
+        pager,
+    ) = await get_playlist(playlist_id, int(page_id))
+
+    await callback.message.edit_text(
+        text=(
+            f'<b>🎧 {quote_html(playlist_title)}</b> '
+            f'({min(((pager["page"] + 1) * pager["per_page"], pager["total"]))} из {pager["total"]})\n\n'
+            f'{tracks_titles_output}'
+        ),
+        reply_markup=generate_playlist_keyboard(tracks_results, playlist_id, left_btn, right_btn, search_id),
     )

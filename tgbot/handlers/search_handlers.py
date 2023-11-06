@@ -1,5 +1,6 @@
 from aiogram import types
 from aiogram.dispatcher.filters import Text
+from aiogram.utils.markdown import quote_html
 from config import ENG_TO_RUS_TYPE, SEARCH_TYPES
 from dispather import dp
 from filters import SearchTypeFilter
@@ -66,18 +67,21 @@ async def message_search_type_track(message: types.Message) -> None:
     }
     if results['best_type'] == 'track':
         track = info_for_keyboard['best_result'] = results["tracks"][0]
-        message_text += f'<b>{track["title"]}</b> – <i>{track["performer"]}</i>\n\n'
+        message_text += f'<b>{quote_html(track["title"])}</b> – <i>{quote_html(track["performer"])}</i>\n\n'
     else:
         other = info_for_keyboard['best_result'] = results[results["best_type"] + "s"][0]
-        message_text += f'<b>{other[1]}</b> – <i>[{ENG_TO_RUS_TYPE[results["best_type"]]}]</i>\n\n'
+        message_text += f'<b>{quote_html(other[1])}</b> – <i>[{ENG_TO_RUS_TYPE[results["best_type"]]}]</i>\n\n'
     
     for index, val in enumerate(
         results[f'{searching_state}s'][1 if results['best_type'] == searching_state else 0:],
         start=1,
     ):
         info_for_keyboard['main_result'] += [val]
-        message_text += f'<code>{index}.</code> <b>{val["title"]}</b> – <i>{val["performer"]}</i>\n'
-
+        message_text += (
+            f'<code>{index}.</code> '
+            f'<b>{quote_html(val["title"])}</b> – <i>{quote_html(val["performer"])}</i>\n'
+        )
+        
     await message.reply(
         text=message_text,
         reply=False,
@@ -112,17 +116,20 @@ async def message_search_type_other(message: types.Message) -> None:
     }
     if results['best_type'] == 'track':
         track = info_for_keyboard['best_result'] = results["tracks"][0]
-        message_text += f'<b>{track["title"]}</b> – <i>{track["performer"]}</i>\n\n'
+        message_text += f'<b>{quote_html(track["title"])}</b> – <i>{quote_html(track["performer"])}</i>\n\n'
     else:
         other = info_for_keyboard['best_result'] = results[results["best_type"] + "s"][0]
-        message_text += f'<b>{other[1]}</b> – <i>[{ENG_TO_RUS_TYPE[results["best_type"]]}]</i>\n\n'
+        message_text += f'<b>{quote_html(other[1])}</b> – <i>[{ENG_TO_RUS_TYPE[results["best_type"]]}]</i>\n\n'
     
     for index, val in enumerate(
         results[f'{searching_state}s'][1 if results['best_type'] == searching_state else 0:],
         start=1,
     ):
         info_for_keyboard['main_result'] += [val]
-        message_text += f'<code>{index}.</code> <b>{val[1]}</b> – <i>[{ENG_TO_RUS_TYPE[searching_state]}]</i>\n'
+        message_text += (
+            f'<code>{index}.</code> '
+            f'<b>{quote_html(val[1])}</b> – <i>[{ENG_TO_RUS_TYPE[searching_state]}]</i>\n'
+        )
 
     await message.reply(
         text=message_text,
@@ -155,17 +162,19 @@ async def search_type_track_callback(
     }
     if results['best_type'] == 'track':
         track = info_for_keyboard['best_result'] = results["tracks"][0]
-        message_text += f'<b>{track["title"]}</b> – <i>{track["performer"]}</i>\n\n'
+        message_text += f'<b>{quote_html(track["title"])}</b> – <i>{quote_html(track["performer"])}</i>\n\n'
     else:
         other = info_for_keyboard['best_result'] = results[results["best_type"] + "s"][0]
-        message_text += f'<b>{other[1]}</b> – <i>[{ENG_TO_RUS_TYPE[results["best_type"]]}]</i>\n\n'
+        message_text += f'<b>{quote_html(other[1])}</b> – <i>[{ENG_TO_RUS_TYPE[results["best_type"]]}]</i>\n\n'
     
     for index, val in enumerate(
         results[f'{searching_state}s'][1 if results['best_type'] == searching_state else 0:],
         start=1,
     ):
         info_for_keyboard['main_result'] += [val]
-        message_text += f'<code>{index}.</code> <b>{val["title"]}</b> – <i>{val["performer"]}</i>\n'
+        message_text += (
+            f'<code>{index}.</code> <b>{quote_html(val["title"])}</b> – <i>{quote_html(val["performer"])}</i>\n'
+        )
 
     await callback.message.edit_text(
         text=message_text,
@@ -197,17 +206,20 @@ async def search_type_other_callback(
     }
     if results['best_type'] == 'track':
         track = info_for_keyboard['best_result'] = results["tracks"][0]
-        message_text += f'<b>{track["title"]}</b> – <i>{track["performer"]}</i>\n\n'
+        message_text += f'<b>{quote_html(track["title"])}</b> – <i>{quote_html(track["performer"])}</i>\n\n'
     else:
         other = info_for_keyboard['best_result'] = results[results["best_type"] + "s"][0]
-        message_text += f'<b>{other[1]}</b> – <i>[{ENG_TO_RUS_TYPE[results["best_type"]]}]</i>\n\n'
+        message_text += f'<b>{quote_html(other[1])}</b> – <i>[{ENG_TO_RUS_TYPE[results["best_type"]]}]</i>\n\n'
     
     for index, val in enumerate(
         results[f'{searching_state}s'][1 if results['best_type'] == searching_state else 0:],
         start=1,
     ):
         info_for_keyboard['main_result'] += [val]
-        message_text += f'<code>{index}.</code> <b>{val[1]}</b> – <i>[{ENG_TO_RUS_TYPE[searching_state]}]</i>\n'
+        message_text += (
+            f'<code>{index}.</code> '
+            f'<b>{quote_html(val[1])}</b> – <i>[{ENG_TO_RUS_TYPE[searching_state]}]</i>\n'
+        )
 
     await callback.message.edit_text(
         text=message_text,

@@ -57,3 +57,45 @@ def generate_artist_keyboard(
     ).add(
         InlineKeyboardButton(text='Результаты поиска' if search_id else '', callback_data=f'search:{search_id}')
     )
+
+
+def generate_album_keyboard(
+    results: list,
+    album_id,
+    left=True,
+    right=True,
+    search_id='',
+) -> InlineKeyboardMarkup:
+    buttons = []
+    for number, result in results:
+        buttons += [InlineKeyboardButton(text=str(number), callback_data=f'!track!{result}')]
+    x = results[0][0] // 10
+    return InlineKeyboardMarkup(row_width=5).add(
+        *buttons
+    ).add(
+        InlineKeyboardButton(text='«' if left else '', callback_data=f'%{x - 1}~{album_id}!{search_id}'),
+        InlineKeyboardButton(text='»' if right else '', callback_data=f'%{x + 1}~{album_id}!{search_id}'),
+    ).add(
+        InlineKeyboardButton(text='Результаты поиска' if search_id else '', callback_data=f'search:{search_id}')
+    )
+
+
+def generate_playlist_keyboard(
+    results: list,
+    playlist_id,
+    left=True,
+    right=True,
+    search_id='',
+) -> InlineKeyboardMarkup:
+    buttons = []
+    for number, result in results:
+        buttons += [InlineKeyboardButton(text=str(number), callback_data=f'!track!{result}')]
+    x = results[0][0] // 10
+    return InlineKeyboardMarkup(row_width=5).add(
+        *buttons
+    ).add(
+        InlineKeyboardButton(text='«' if left else '', callback_data=f'@{x - 1}~{playlist_id}!{search_id}'),
+        InlineKeyboardButton(text='»' if right else '', callback_data=f'@{x + 1}~{playlist_id}!{search_id}'),
+    ).add(
+        InlineKeyboardButton(text='Результаты поиска' if search_id else '', callback_data=f'search:{search_id}')
+    )
