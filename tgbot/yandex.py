@@ -164,25 +164,29 @@ async def search(text: str, search_type='track') -> dict | None:
     match search_type:
         case 'album':
             x = 1 if best_type == 'albums' else 0
-            for album in result['albums']['results'][x:x + 5]:
-                output['albums'] += [(album['id'], album['title'])]
+            if result['albums'] is not None:
+                for album in result['albums']['results'][x:x + 5]:
+                    output['albums'] += [(album['id'], album['title'])]
         case 'artist':
             x = 1 if best_type == 'artist' else 0
-            for artist in result['artists']['results'][x:x + 5]:
-                output['artists'] += [(artist['id'], artist['name'])]
+            if result['artists'] is not None:
+                for artist in result['artists']['results'][x:x + 5]:
+                    output['artists'] += [(artist['id'], artist['name'])]
         case 'playlist':
-            for playlist in result['playlists']['results'][1 if best_type == 'playlist' else 0:]:
-                output['playlists'] += [(
-                    f'{playlist["owner"]["login"]}:{playlist["kind"]}',
-                    result['best']['result']['title'],
-                )]
+            if result['playlists'] is not None:
+                for playlist in result['playlists']['results'][1 if best_type == 'playlist' else 0:]:
+                    output['playlists'] += [(
+                        f'{playlist["owner"]["login"]}:{playlist["kind"]}',
+                        result['best']['result']['title'],
+                    )]
         case 'track':
             x = 1 if best_type == 'track' else 0
-            for track in result['tracks']['results'][x:x + 5]:
-                output['tracks'] += [{
-                    'track_id': track['id'],
-                    'album_id': track['albums'][0]['id'],
-                    'title': track['title'],
-                    'performer': ', '.join(map(lambda i: i['name'], track['artists'][:3])),
-                }]
+            if result['tracks'] is not None:
+                for track in result['tracks']['results'][x:x + 5]:
+                    output['tracks'] += [{
+                        'track_id': track['id'],
+                        'album_id': track['albums'][0]['id'],
+                        'title': track['title'],
+                        'performer': ', '.join(map(lambda i: i['name'], track['artists'][:3])),
+                    }]
     return output
