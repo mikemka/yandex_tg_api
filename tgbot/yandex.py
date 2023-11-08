@@ -177,7 +177,7 @@ async def search(text: str, search_type='track') -> dict | None:
                 for playlist in result['playlists']['results'][1 if best_type == 'playlist' else 0:]:
                     output['playlists'] += [(
                         f'{playlist["owner"]["login"]}:{playlist["kind"]}',
-                        result['best']['result']['title'],
+                        playlist['title'],
                     )]
         case 'track':
             x = 1 if best_type == 'track' else 0
