@@ -20,9 +20,9 @@ async def callback_track_chosen(callback: types.CallbackQuery):
             text='❌ Возможно, песня была перемещена или удалена.',
         )
     
-    msg_ans = await callback.bot.send_message(
+    await callback.bot.send_chat_action(
         chat_id=callback.from_user.id,
-        text='🎧 Скачиваем...',
+        action='upload_document',
     )
 
     path, thumb_path, title, performer = result
@@ -35,7 +35,6 @@ async def callback_track_chosen(callback: types.CallbackQuery):
         thumb=open(thumb_path, 'rb'),
     )
     await callback.answer()
-    await msg_ans.delete()
     remove(path=path)
     remove(path=thumb_path)
     new_download_log(callback.from_user.id, ':'.join((track_album, track_id)))

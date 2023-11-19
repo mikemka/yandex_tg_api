@@ -1,3 +1,4 @@
+from pprint import pprint
 from aiogram.utils.markdown import quote_html
 from config import YANDEX_TOKEN, TRACKS_DIRECTORY
 import mutagen
@@ -37,15 +38,23 @@ async def get_artist(artist_id: int, tracks_page=0, page_size=10) -> tuple:
 async def get_album(album_id: int, tracks_page=0, page_size=10) -> tuple:
     album = await client.albums_with_tracks(album_id=album_id)
     tracks_total = album['track_count']
-    tracks = []
-    for part in album['volumes']:
+    tracks, volume_ids, _local_tracks_total = [], {}, 1
+    for volume_id, part in enumerate(album['volumes'], start=1):
         tracks += part  # unpack discs lists to large list
+        volume_ids[volume_id] = _local_tracks_total
+        _local_tracks_total += len(part)
     tracks_ids, tracks_titles_output = [], ''
     for index, track in enumerate(
         tracks[tracks_page * page_size:(tracks_page + 1) * page_size],
         start=tracks_page * page_size + 1
     ):
         tracks_ids += [(index, f'{track.id}:{track.albums[0].id}')]
+        if len(volume_ids) > 1:
+            for volume_id in volume_ids:
+                if volume_ids[volume_id] == tracks_page * page_size + index:
+                    tracks_titles_output += '\n' if volume_id != 1 else ''
+                    tracks_titles_output += f'<u>Диск {volume_id}</u>\n\n'
+                    break
         tracks_titles_output += (
             f'<code>{index}.</code> <b>{quote_html(track.title)}</b> – '
             f'<i>{quote_html(", ".join(map(lambda i: i.name, track.artists[:3])))}</i>\n'
