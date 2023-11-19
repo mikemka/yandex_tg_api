@@ -7,6 +7,7 @@ from filters import SearchTypeFilter
 from keyboards import generate_search_keyboard
 from yandex import search as search_song
 from user_info import get_search_type, next_search_type, save_search_request, get_search_request
+from stats_logs import new_search_log
 
 
 async def callback_main_search(callback: types.CallbackQuery, need_next_search_type=True):
@@ -52,13 +53,16 @@ async def message_search_type_track(message: types.Message) -> None:
     )
     searching_state = 'track'
     results = await search_song(message.text, search_type=searching_state)
-    
+
     if results is None:
         await message.delete()
         return await message.reply(
             text='❌ Ничего не нашлось. Попробуйте сменить тип поиска или изменить свой запрос.',
             reply=False,
         )
+    
+    new_search_log(message.from_user.id, message.text, f'{searching_state}*text')
+    
     info_for_keyboard = {
         'best_result': None,
         'best_type': results['best_type'],
@@ -100,14 +104,17 @@ async def message_search_type_other(message: types.Message) -> None:
         '⬇️ Лучшее совпадение\n\n'
     )
     searching_state = SEARCH_TYPES[get_search_type(message.from_user.id)]
-    results = await search_song(message.text, search_type=searching_state)
     
+    results = await search_song(message.text, search_type=searching_state)
     if results is None:
         await message.delete()
         return await message.reply(
             text='❌ Ничего не нашлось. Попробуйте сменить тип поиска или изменить свой запрос.',
             reply=False,
         )
+    
+    new_search_log(message.from_user.id, message.text, f'{searching_state}*text')
+    
     info_for_keyboard = {
         'best_result': None,
         'best_type': results['best_type'],

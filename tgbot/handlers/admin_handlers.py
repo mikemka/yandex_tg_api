@@ -3,6 +3,7 @@ from config import DATABASE
 from database import User
 from dispather import dp
 from filters import IsOwnerFilter
+from stats_logs import new_mailing_log
 
 
 @dp.message_handler(IsOwnerFilter(), commands=['admin'])
@@ -20,11 +21,17 @@ async def admin_help(message: Message) -> None:
 @dp.message_handler(IsOwnerFilter(), commands=['mail'])
 async def mail(message: Message) -> None:
     _text, _users, _errors = message.text[6:], User.select(), 0
+    users_list = []
     for _user in _users:
+        local_error = 0
         try:
             await message.bot.send_message(chat_id=_user.user_id, text=_text)
         except:
-            _errors += 1
+            local_error = 1
+        users_list += [(_user.user_id, (local_error + 1) % 2)]
+        _errors += local_error
+    
+    new_mailing_log(admin_id=message.from_user.id, users_list=users_list)
     await message.answer(f'Отправлено {_users.count() - _errors} сообщения. {_errors} ошибок')
 
 

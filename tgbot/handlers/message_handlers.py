@@ -6,12 +6,14 @@ from keyboards import generate_artist_keyboard, generate_album_keyboard, generat
 from re import match
 from yandex import download_song, get_artist, get_album, get_playlist
 from os import remove
+from stats_logs import new_user_log, new_search_log, new_download_log
 
 
 @dp.message_handler(commands=['start', 'help'])
 async def start(message: types.Message) -> None:
     if not User.select().where(User.user_id == message.from_user.id):
         User.create(user_id=message.from_user.id)
+        new_user_log(message.from_user.id)
     
     await message.reply(
         text=(
@@ -30,7 +32,7 @@ async def start(message: types.Message) -> None:
 
 
 @dp.message_handler(regexp=r'https?://music\.yandex\.ru/album/(\d+)/track/(\d+)')
-async def song_by_link(message: types.Message) -> None:
+async def track_by_link(message: types.Message) -> None:
     url = match(r'https?://music\.yandex\.ru/album/(\d+)/track/(\d+)', message.text)
     try:
         result = await download_song(url.group(1), url.group(2))
@@ -59,6 +61,8 @@ async def song_by_link(message: types.Message) -> None:
     await msg_ans.delete()
     remove(path=path)
     remove(path=thumb_path)
+    new_search_log(message.from_user.id, message.text, 'track*link')
+    new_download_log(message.from_user.id, f'{url.group(1)}:{url.group(2)}')
 
 
 @dp.message_handler(regexp=r'https?://music\.yandex\.ru/artist/(\d+)')
@@ -89,6 +93,7 @@ async def artist_by_link(message: types.Message) -> None:
         reply=False,
         reply_markup=generate_artist_keyboard(tracks_results, artist_id, left_btn, right_btn),
     )
+    new_search_log(message.from_user.id, message.text, 'artist*link')
 
 
 @dp.message_handler(regexp=r'https?://music\.yandex\.ru/album/(\d+)')
@@ -119,6 +124,7 @@ async def album_by_link(message: types.Message) -> None:
         reply=False,
         reply_markup=generate_album_keyboard(tracks_results, album_id, left_btn, right_btn),
     )
+    new_search_log(message.from_user.id, message.text, 'album*link')
 
 
 @dp.message_handler(regexp=r'https?://music\.yandex\.ru/users/(.+)/playlists/(\d+)')
@@ -150,3 +156,4 @@ async def playlist_by_link(message: types.Message) -> None:
         reply=False,
         reply_markup=generate_playlist_keyboard(tracks_results, playlist_id, left_btn, right_btn),
     )
+    new_search_log(message.from_user.id, message.text, 'playlist*link')

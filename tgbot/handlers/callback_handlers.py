@@ -6,12 +6,14 @@ from keyboards import generate_artist_keyboard, generate_album_keyboard, generat
 from yandex import download_song, get_artist, get_album, get_playlist
 from yandex_music.exceptions import BadRequestError
 from os import remove
+from stats_logs import new_download_log
 
 
 @dp.callback_query_handler(Text(startswith="!track!"))
 async def callback_track_chosen(callback: types.CallbackQuery):
+    track_album, track_id = callback.data[7:].split(':')[::-1]
     try:
-        result = await download_song(*callback.data[7:].split(':')[::-1])
+        result = await download_song(track_album, track_id)
     except BadRequestError:
         return await callback.bot.send_message(
             chat_id=callback.from_user.id,
@@ -36,6 +38,7 @@ async def callback_track_chosen(callback: types.CallbackQuery):
     await msg_ans.delete()
     remove(path=path)
     remove(path=thumb_path)
+    new_download_log(callback.from_user.id, ':'.join((track_album, track_id)))
 
 
 @dp.callback_query_handler(Text(startswith="!artist!"))

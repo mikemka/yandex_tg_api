@@ -2,10 +2,11 @@ from ast import literal_eval
 from dotenv import load_dotenv
 from os import getenv, mkdir
 from pathlib import Path
-from string import digits, ascii_letters, punctuation
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+STATS_DIR = BASE_DIR / 'stats'
 
 DOTENV_PATH = BASE_DIR / '.env'
 
