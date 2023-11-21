@@ -28,7 +28,7 @@ def write_log(filepath: Path, log_info: tuple | list):
 
 
 def new_user_log(user_id: int):
-    write_log(NEW_USERS_LOG, user_id)
+    write_log(NEW_USERS_LOG, (user_id, ))
 
 
 def new_search_log(user_id: int, search_request: str, search_type: str):
