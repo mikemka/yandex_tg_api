@@ -1,10 +1,10 @@
-from pprint import pprint
 from aiogram.utils.markdown import quote_html
 from config import YANDEX_TOKEN, TRACKS_DIRECTORY
 import mutagen
 from mutagen.easyid3 import EasyID3
 from yandex_music import ClientAsync
 from utils import generate_track_path
+from simplejson import loads
 
 
 # Initialising
@@ -16,7 +16,7 @@ async def init_client() -> None:
 # Main requests
 async def get_artist(artist_id: int, tracks_page=0, page_size=10) -> tuple:
     artist = (await client.artists(artist_ids=[artist_id]))[0]
-    tracks_req = (await artist.get_tracks_async(page=tracks_page, page_size=page_size))
+    tracks_req = await artist.get_tracks_async(page=tracks_page, page_size=page_size)
     tracks, pager = tracks_req.tracks, tracks_req.pager
     tracks_ids, tracks_titles_output = [], ''
     for index, track in enumerate(tracks, start=tracks_page * page_size + 1):
@@ -31,6 +31,24 @@ async def get_artist(artist_id: int, tracks_page=0, page_size=10) -> tuple:
         tracks_titles_output,
         tracks_page > 0,
         (tracks_page + 1) * page_size < pager.total,
+        pager,
+    )
+
+
+async def get_artist_albums(artist_id: int, albums_page=0, page_size=10) -> tuple:
+    artist = (await client.artists(artist_ids=[artist_id]))[0]
+    albums = await artist.get_albums_async(page=albums_page, page_size=page_size)
+    pager = albums.pager
+    albums_ids, albums_titles_output = [], ''
+    for index, album in enumerate(albums, start=albums_page * page_size + 1):
+        albums_ids += [(index, album.id)]
+        albums_titles_output += f'<code>{index}.</code> <b>{quote_html(album.title)}</b> – <i>[альбом]</i>\n'
+    return (
+        artist.name,
+        albums_ids,
+        albums_titles_output,
+        albums_page > 0,
+        (albums_page + 1) * page_size < pager.total,
         pager,
     )
 
@@ -145,57 +163,57 @@ async def search(text: str, search_type='track') -> dict | None:
     if result['best'] is None:
         return None
     
-    best_type = result['best']['type']
+    best_result = result.best
     output = {
-        'best_type': best_type if best_type in ('album', 'artist', 'playlist', 'track') else None,
+        'best_type': best_result.type if best_result.type in ('album', 'artist', 'playlist', 'track') else None,
         'albums': [], 'artists': [], 'playlists': [], 'tracks': [],
     }
     
-    match result['best']['type']:
+    match best_result.type:
         case 'album':
-            output['albums'] = [(result['best']['result']['id'], result['best']['result']['title'])]
+            output['albums'] = [(best_result.result.id, best_result.result.title)]
         case 'artist':
-            output['artists'] = [(result['best']['result']['id'], result['best']['result']['name'])]
+            output['artists'] = [(best_result.result.id, best_result.result.name)]
         case 'playlist':
             output['playlists'] = [(
-                f'{result["best"]["result"]["owner"]["login"]}:{result["best"]["result"]["kind"]}',
-                result['best']['result']['title'],
+                f'{best_result.result.owner.login}:{best_result.result.kind}',
+                best_result.result.title,
             )]
         case 'track':
-            track = result['best']['result']
+            track = best_result.result
             output['tracks'] = [{
-                'track_id': track['id'],
-                'album_id': track['albums'][0]['id'],
-                'title': track['title'],
-                'performer': ', '.join(map(lambda i: i['name'], track['artists'][:3])),
+                'track_id': track.id,
+                'album_id': track.albums[0].id,
+                'title': track.title,
+                'performer': ', '.join(map(lambda i: i.name, track.artists[:3])),
             }]
     
     match search_type:
         case 'album':
-            x = 1 if best_type == 'albums' else 0
-            if result['albums'] is not None:
-                for album in result['albums']['results'][x:x + 5]:
-                    output['albums'] += [(album['id'], album['title'])]
+            x = 1 if best_result.type == 'albums' else 0
+            if result.albums is not None:
+                for album in result.albums.results[x:x + 5]:
+                    output['albums'] += [(album.id, album.title)]
         case 'artist':
-            x = 1 if best_type == 'artist' else 0
-            if result['artists'] is not None:
-                for artist in result['artists']['results'][x:x + 5]:
-                    output['artists'] += [(artist['id'], artist['name'])]
+            x = 1 if best_result.type == 'artist' else 0
+            if result.artists is not None:
+                for artist in result.artists.results[x:x + 5]:
+                    output['artists'] += [(artist.id, artist.name)]
         case 'playlist':
-            if result['playlists'] is not None:
-                for playlist in result['playlists']['results'][1 if best_type == 'playlist' else 0:]:
+            if result.playlists is not None:
+                for playlist in result.playlists.results[1 if best_result.type == 'playlist' else 0:]:
                     output['playlists'] += [(
-                        f'{playlist["owner"]["login"]}:{playlist["kind"]}',
-                        playlist['title'],
+                        f'{playlist.owner.login}:{playlist.kind}',
+                        playlist.title,
                     )]
         case 'track':
-            x = 1 if best_type == 'track' else 0
-            if result['tracks'] is not None:
-                for track in result['tracks']['results'][x:x + 5]:
+            x = 1 if best_result.type == 'track' else 0
+            if result.tracks is not None:
+                for track in result.tracks.results[x:x + 5]:
                     output['tracks'] += [{
-                        'track_id': track['id'],
-                        'album_id': track['albums'][0]['id'],
-                        'title': track['title'],
-                        'performer': ', '.join(map(lambda i: i['name'], track['artists'][:3])),
+                        'track_id': track.id,
+                        'album_id': track.albums[0].id,
+                        'title': track.title,
+                        'performer': ', '.join(map(lambda i: i.name, track.artists[:3])),
                     }]
     return output

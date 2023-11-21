@@ -45,15 +45,45 @@ def generate_artist_keyboard(
     right=True,
     search_id='',
 ) -> InlineKeyboardMarkup:
-    buttons = []
-    for number, result in results:
-        buttons += [InlineKeyboardButton(text=str(number), callback_data=f'!track!{result}')]
     x = results[0][0] // 10
     return InlineKeyboardMarkup(row_width=5).add(
-        *buttons
+        *[InlineKeyboardButton(text=str(number), callback_data=f'!track!{result}') for number, result in results]
     ).add(
         InlineKeyboardButton(text='«' if left else '', callback_data=f'${x - 1}~{artist_id}!{search_id}'),
         InlineKeyboardButton(text='»' if right else '', callback_data=f'${x + 1}~{artist_id}!{search_id}'),
+    ).add(
+        InlineKeyboardButton(text='Все альбомы', callback_data=f'!art_album!{artist_id}!{search_id}')
+    ).add(
+        InlineKeyboardButton(text='Результаты поиска' if search_id else '', callback_data=f'search:{search_id}')
+    )
+
+
+def generate_artist_by_album_keyboard(
+    results: list,
+    artist_id,
+    left=True,
+    right=True,
+    search_id='',
+) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(row_width=5).add(
+        *[
+            InlineKeyboardButton(
+                text=str(number),
+                callback_data=f'!album!{result}!{search_id}!{artist_id}!',
+            )
+            for number, result in results
+        ]
+    ).add(
+        InlineKeyboardButton(
+            text='«' if left else '',
+            callback_data=f'#{results[0][0] // 10 - 1}~{artist_id}!{search_id}',
+        ),
+        InlineKeyboardButton(
+            text='»' if right else '',
+            callback_data=f'#{results[0][0] // 10 + 1}~{artist_id}!{search_id}',
+        ),
+    ).add(
+        InlineKeyboardButton(text='Все треки', callback_data=f'!artist!{artist_id}!{search_id}')
     ).add(
         InlineKeyboardButton(text='Результаты поиска' if search_id else '', callback_data=f'search:{search_id}')
     )
@@ -65,17 +95,26 @@ def generate_album_keyboard(
     left=True,
     right=True,
     search_id='',
+    artist_id='',
 ) -> InlineKeyboardMarkup:
     buttons = []
     for number, result in results:
         buttons += [InlineKeyboardButton(text=str(number), callback_data=f'!track!{result}')]
-    x = results[0][0] // 10
     return InlineKeyboardMarkup(row_width=5).add(
         *buttons
     ).add(
-        InlineKeyboardButton(text='«' if left else '', callback_data=f'%{x - 1}~{album_id}!{search_id}'),
-        InlineKeyboardButton(text='»' if right else '', callback_data=f'%{x + 1}~{album_id}!{search_id}'),
-    ).add(
+        InlineKeyboardButton(
+            text='«' if left else '',
+            callback_data=f'%{results[0][0] // 10 - 1}~{album_id}!{search_id}!{artist_id}',
+        ),
+        InlineKeyboardButton(
+            text='»' if right else '',
+            callback_data=f'%{results[0][0] // 10 + 1}~{album_id}!{search_id}!{artist_id}',
+        ),
+    ).add(InlineKeyboardButton(
+        text='Все альбомы исполнителя' if artist_id else '',
+        callback_data=f'!art_album!{artist_id}!{search_id}',
+    )).add(
         InlineKeyboardButton(text='Результаты поиска' if search_id else '', callback_data=f'search:{search_id}')
     )
 

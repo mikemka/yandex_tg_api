@@ -2,8 +2,13 @@ from aiogram import types
 from aiogram.utils.markdown import quote_html
 from aiogram.dispatcher.filters import Text
 from dispather import dp
-from keyboards import generate_artist_keyboard, generate_album_keyboard, generate_playlist_keyboard
-from yandex import download_song, get_artist, get_album, get_playlist
+from keyboards import (
+    generate_artist_keyboard,
+    generate_album_keyboard,
+    generate_playlist_keyboard,
+    generate_artist_by_album_keyboard,
+)
+from yandex import download_song, get_artist, get_album, get_playlist, get_artist_albums
 from yandex_music.exceptions import BadRequestError
 from os import remove
 from stats_logs import new_download_log
@@ -65,10 +70,71 @@ async def callback_artist_chosen(callback: types.CallbackQuery):
     )
 
 
+@dp.callback_query_handler(Text(startswith="!art_album!"))
+async def callback_artist_album(callback: types.CallbackQuery):
+    artist_id = callback.data[11:][:callback.data[11:].find('!')]
+    search_id = callback.data[11:][callback.data[11:].find('!') + 1:]
+    (
+        artist_name,
+        albums_results,
+        albums_titles_output,
+        left_btn,
+        right_btn,
+        pager,
+    ) = await get_artist_albums(artist_id)
+    await callback.message.edit_text(
+        text=(
+            f'<b>🎧 {quote_html(artist_name)}</b> '
+            f'({min(((pager["page"] + 1) * pager["per_page"], pager["total"]))} из {pager["total"]})\n\n'
+            f'{albums_titles_output}'
+        ),
+        reply_markup=generate_artist_by_album_keyboard(
+            albums_results,
+            artist_id,
+            left_btn,
+            right_btn,
+            search_id,
+        ),
+    )
+
+
+@dp.callback_query_handler(Text(startswith='#'))
+async def callback_artist_album(callback: types.CallbackQuery):
+    page_id = int(callback.data[1:][:callback.data.find('~') - 1])
+    artist_id = int(callback.data[callback.data.find('~') + 1:callback.data.find('!')])
+    search_id = callback.data[callback.data.rfind('!') + 1:]
+    (
+        artist_name,
+        albums_results,
+        albums_titles_output,
+        left_btn,
+        right_btn,
+        pager,
+    ) = await get_artist_albums(artist_id, albums_page=page_id)
+    await callback.message.edit_text(
+        text=(
+            f'<b>🎧 {quote_html(artist_name)}</b> '
+            f'({min(((pager["page"] + 1) * pager["per_page"], pager["total"]))} из {pager["total"]})\n\n'
+            f'{albums_titles_output}'
+        ),
+        reply_markup=generate_artist_by_album_keyboard(
+            albums_results,
+            artist_id,
+            left_btn,
+            right_btn,
+            search_id,
+        ),
+    )
+
+
 @dp.callback_query_handler(Text(startswith="!album!"))
 async def callback_album_chosen(callback: types.CallbackQuery):
-    album_id = callback.data[7:][:callback.data[7:].find('!')]
-    search_id = callback.data[7:][callback.data[7:].find('!') + 1:]
+    callback_data = callback.data.strip('!').split('!')[1:]
+    artist_id = ''
+    if len(callback_data) == 2:
+        album_id, search_id = callback_data
+    else:
+        album_id, search_id, artist_id = callback_data
     try:
         (
             album_title,
@@ -86,7 +152,14 @@ async def callback_album_chosen(callback: types.CallbackQuery):
             f'({min(((pager["page"] + 1) * pager["per_page"], pager["total"]))} из {pager["total"]})\n\n'
             f'{tracks_titles_output}'
         ),
-        reply_markup=generate_album_keyboard(tracks_results, album_id, left_btn, right_btn, search_id),
+        reply_markup=generate_album_keyboard(
+            results=tracks_results,
+            album_id=album_id,
+            left=left_btn,
+            right=right_btn,
+            search_id=search_id,
+            artist_id=artist_id,
+        ),
     )
 
 
@@ -141,8 +214,15 @@ async def callback_change_artist_page(callback: types.CallbackQuery):
 
 @dp.callback_query_handler(Text(startswith='%'))
 async def callback_change_album_page(callback: types.CallbackQuery):
-    search_id = callback.data[1:][callback.data[1:].find('!') + 1:]
-    page_id, album_id = map(int, callback.data[1:][:callback.data[1:].find('!')].split('~'))
+    page_id = int(callback.data[1:][:callback.data.find('~') - 1])
+    
+    callback_data = callback.data[callback.data.find('~') + 1:].split('!')
+    artist_id = ''
+    if len(callback_data) == 2:
+        album_id, search_id = callback_data
+    else:
+        album_id, search_id, artist_id = callback_data
+
     (
         album_title,
         tracks_results,
@@ -158,7 +238,7 @@ async def callback_change_album_page(callback: types.CallbackQuery):
             f'({min(((pager["page"] + 1) * pager["per_page"], pager["total"]))} из {pager["total"]})\n\n'
             f'{tracks_titles_output}'
         ),
-        reply_markup=generate_album_keyboard(tracks_results, album_id, left_btn, right_btn, search_id),
+        reply_markup=generate_album_keyboard(tracks_results, album_id, left_btn, right_btn, search_id, artist_id),
     )
 
 
