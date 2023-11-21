@@ -6,4 +6,5 @@ database.db
 .env
 ignore*.*
 storage.json
-*.log
+stats/*.log
+stats/*.png

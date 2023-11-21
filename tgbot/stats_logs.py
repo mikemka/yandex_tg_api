@@ -16,7 +16,7 @@ def escape_newline(s: str) -> str:
     return str(s).replace('\n', '\\n').replace('\t', '\\t')
 
 
-def write_log(filepath: Path, log_info: tuple | list):
+def write_log(filepath: Path, log_info: tuple | list) -> None:
     if not filepath.exists():
         with open(filepath, 'x'):
             pass
@@ -27,7 +27,30 @@ def write_log(filepath: Path, log_info: tuple | list):
         )
 
 
-def new_user_log(user_id: int):
+def load_users_log() -> list[dict]:
+    if not NEW_USERS_LOG.exists():
+        return []
+    with open(NEW_USERS_LOG) as users_log_file:
+        loaded_log = users_log_file.read().strip()
+    return list(map(lambda i: {
+        'datetime': datetime.strptime(i.split(';')[0], '%Y/%m/%d %H:%M:%S'),
+        'user_id': int(i.split(';')[1]),
+    }, loaded_log.split('\n')))
+
+
+def load_downloaded_log() -> list[dict]:
+    if not DOWNLOADED_SONGS_LOG.exists():
+        return []
+    with open(DOWNLOADED_SONGS_LOG) as log_file:
+        loaded_log = log_file.read().strip()
+    return list(map(lambda i: {
+        'datetime': datetime.strptime(i.split(';')[0], '%Y/%m/%d %H:%M:%S'),
+        'user_id': int(i.split(';')[1]),
+        'song_id': i.split(';')[2],
+    }, loaded_log.split('\n')))
+
+
+def new_user_log(user_id: int) -> None:
     write_log(NEW_USERS_LOG, (user_id, ))
 
 
