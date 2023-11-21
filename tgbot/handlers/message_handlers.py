@@ -43,11 +43,11 @@ async def track_by_link(message: types.Message) -> None:
             reply=False,
         )
     
-    msg_ans = await message.reply(
-        text='🎧 Скачиваем...',
-        reply=False,
+    await message.bot.send_chat_action(
+        chat_id=message.from_user.id,
+        action='upload_document',
     )
-    
+
     path, thumb_path, title, performer = result
     
     await message.bot.send_audio(
@@ -58,7 +58,6 @@ async def track_by_link(message: types.Message) -> None:
         title=title,
         thumb=open(thumb_path, 'rb'),
     )
-    await msg_ans.delete()
     remove(path=path)
     remove(path=thumb_path)
     new_search_log(message.from_user.id, message.text, 'track*link')
