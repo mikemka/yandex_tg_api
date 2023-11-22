@@ -5,6 +5,7 @@ from dispather import dp
 from filters import IsOwnerFilter
 from stats_graphs import generate_downloaded_graph_image, generate_users_graph_image
 from stats_logs import new_mailing_log
+import os
 
 
 @dp.message_handler(IsOwnerFilter(), commands=['admin'])
@@ -75,6 +76,7 @@ async def stats(message: Message) -> None:
         graph_downloaded_14_path,
     ):
         media.attach_photo(InputFile(open(path, 'rb')))
+        os.remove(path)
     
     _count_users = User.select().count()
     

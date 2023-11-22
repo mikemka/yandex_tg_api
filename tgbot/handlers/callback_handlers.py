@@ -8,7 +8,13 @@ from keyboards import (
     generate_playlist_keyboard,
     generate_artist_by_album_keyboard,
 )
-from yandex import download_song, get_artist, get_album, get_playlist, get_artist_albums
+from yandex import (
+    download_song,
+    get_artist,
+    get_album,
+    get_playlist,
+    get_artist_albums,
+)
 from yandex_music.exceptions import BadRequestError
 from os import remove
 from stats_logs import new_download_log
